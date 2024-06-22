@@ -5,7 +5,7 @@
 import Foundation
 import Supabase
 import Combine
-import CommonUtils
+@_exported import CommonUtils
 
 public enum RemoteChange {
     case added([String:Any])

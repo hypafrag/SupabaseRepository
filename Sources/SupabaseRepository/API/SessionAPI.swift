@@ -6,13 +6,17 @@
 //
 
 import Foundation
-import CommonUtils
+@_exported import CommonUtils
 
 public protocol SessionAPIProtocol {
     
     var repository: SupabaseRepositoryProtocol { get }
     
     var didLogout: VoidPublisher { get }
+    
+    func verificationId(phoneNumber: String) async throws -> String
+    func signIn(verificationId: String, code: String) async throws -> UUID
+    func logout() async throws
 }
 
 fileprivate var retainKey = 0

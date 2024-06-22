@@ -3,8 +3,7 @@
 //
 
 import Foundation
-import Kingfisher
-import DependencyContainer
+@_exported import Kingfisher
 import UIKit
 
 public protocol ImageProviderProtocol: ImageDataProvider {

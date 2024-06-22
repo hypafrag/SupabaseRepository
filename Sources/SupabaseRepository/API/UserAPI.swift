@@ -17,6 +17,13 @@ public protocol UserAPIProtocol {
     var repository: SupabaseRepositoryProtocol { get }
     
     var userScope: String { get }
+    
+    func user(id: UUID) async throws -> [String:Any]?
+    func createUser(data: [String:Any]) async throws -> [String:Any]
+    func updateUser(id: UUID, data: [String:Any]) async throws -> [String:Any]
+    func deleteUser(userId: UUID) async throws
+    func uploadProfile(image: UIImage, userId: UUID, imageExtension: ImageExtension) async throws -> BucketFilePath
+    func deleteProfileImage(userId: UUID, imageExtension: ImageExtension) async
 }
 
 public extension UserAPIProtocol {

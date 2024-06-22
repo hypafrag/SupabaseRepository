@@ -7,9 +7,9 @@
 
 import Foundation
 import Supabase
-import CommonUtils
+@_exported import CommonUtils
 import UIKit
-import Kingfisher
+@_exported import Kingfisher
 
 public struct SupabaseId: RawRepresentable, Codable, Hashable {
     public var rawValue: String
@@ -62,6 +62,25 @@ public struct BucketFilePath: Codable, Hashable {
 public protocol SupabaseRepositoryProtocol {
     
     var client: SupabaseClient { get }
+    
+    func imageProvider(path: ImageProviderPath) -> any ImageProviderProtocol
+    func signedUrl(path: BucketFilePath) async throws -> URL
+    func object(id: UUID, table: SupabaseId, select: String) async throws -> [String:Any]?
+    func updateObject(id: UUID, table: SupabaseId, data: [String:Any]) async throws -> [String:Any]
+    func upsertObject(id: UUID, table: SupabaseId, data: [String:Any]) async throws -> [String:Any]
+    func deleteObject(id: UUID, table: SupabaseId) async throws
+    func createObject(table: SupabaseId, data: [String:Any]) async throws -> [String:Any]
+    func createObjects(table: SupabaseId, data: [[String:Any]]) async throws -> [[String:Any]]
+    func customRequest<Body: Encodable>(path: String,
+                                        method: String,
+                                        body: Body,
+                                        token: String?,
+                                        apiKey: String,
+                                        baseURL: URL) async throws -> [String : Any]
+    func upload(file: URL, messageId: UUID, bucket: SupabaseId, suffix: String, contentType: String) async throws -> BucketFilePath
+    func upload(image: URL, messageId: UUID, bucket: SupabaseId, suffix: String) async throws -> BucketFilePath
+    func upload(image: UIImage, path: BucketFilePath, imageExtension: ImageExtension) async throws -> BucketFilePath
+    func deleteImage(_ path: BucketFilePath) async
 }
 
 public extension SupabaseRepositoryProtocol {

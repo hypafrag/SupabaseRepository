@@ -42,13 +42,17 @@ public struct Verification: Hashable {
 public protocol SessionManagerProtocol: ObservableObject {
     
     var session: Session? { get set }
-    
     var sessionAPI: any SessionAPIProtocol { get }
+    
+    func verify(_ verification: Verification, code: String) async throws
+    func activeSession() throws -> Session
+    func signIn(phone: String) async throws -> Verification
+    func logout() async throws
 }
 
 public extension SessionManagerProtocol {
     
-    func setupLogout() {
+    func setupSession() {
         sessionAPI.didLogout.sinkMain(retained: self) { [weak self] in
             if let wSelf = self, wSelf.session != nil {
                 wSelf.session = nil

@@ -4,7 +4,7 @@
 
 import Foundation
 import Supabase
-import CommonUtils
+@_exported import CommonUtils
 
 public extension AnyJSON {
     

@@ -3,8 +3,8 @@
 //
 
 import Foundation
-import PhoneNumberKit
-import SwiftUIComponents
+@_exported import PhoneNumberKit
+@_exported import SwiftUIComponents
 
 public extension String {
     
