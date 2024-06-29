@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Supabase
 
 public extension SupabaseId {
     static let usersTable = SupabaseId(rawValue: "users")
@@ -19,6 +20,7 @@ public protocol UserAPIProtocol {
     var userScope: String { get }
     
     func user(id: UUID) async throws -> [String:Any]?
+    func users(ids: [UUID]) async throws -> [[String:Any]]
     func createUser(data: [String:Any]) async throws -> [String:Any]
     func updateUser(id: UUID, data: [String:Any]) async throws -> [String:Any]
     func deleteUser(userId: UUID) async throws
@@ -32,6 +34,13 @@ public extension UserAPIProtocol {
     
     func user(id: UUID) async throws -> [String:Any]? {
         try await repository.object(id: id, table: .usersTable, select: userScope)
+    }
+    
+    func users(ids: [UUID]) async throws -> [[String:Any]] {
+        if ids.isEmpty { return [] }
+        
+        let result: [AnyJSON] = try await repository.client.from(SupabaseId.usersTable.rawValue).select(userScope).in("id", values: ids).execute().value
+        return result.anyArrayOfDict
     }
     
     func createUser(data: [String:Any]) async throws -> [String:Any] {

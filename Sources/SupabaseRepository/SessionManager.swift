@@ -21,7 +21,7 @@ public enum SessionError: LocalizedError {
 
 public struct Session: Codable {
     public let userId: UUID
-    let login: String
+    public let login: String
     
     public init(userId: UUID, login: String) {
         self.userId = userId

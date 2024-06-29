@@ -83,6 +83,11 @@ public protocol SupabaseRepositoryProtocol {
     func deleteImage(_ path: BucketFilePath) async
 }
 
+public extension PostgrestError {
+    
+    var isNotFound: Bool { code == "PGRST116" }
+}
+
 public extension SupabaseRepositoryProtocol {
     
     func signedUrl(path: BucketFilePath) async throws -> URL {
@@ -94,7 +99,7 @@ public extension SupabaseRepositoryProtocol {
             let result: AnyJSON = try await client.from(table.rawValue).select(select).match(["id" : id]).single().execute().value
             return try result.firstDictionary()
         } catch {
-            if let error = error as? PostgrestError, error.code == "PGRST116" {
+            if let error = error as? PostgrestError, error.isNotFound {
                 return nil
             }
             throw error

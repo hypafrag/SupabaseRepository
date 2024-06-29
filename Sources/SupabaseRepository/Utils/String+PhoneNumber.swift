@@ -4,7 +4,6 @@
 
 import Foundation
 @_exported import PhoneNumberKit
-@_exported import SwiftUIComponents
 
 public extension String {
     
@@ -34,13 +33,13 @@ public extension String {
         return nil
     }
     
-    var isValidPhone: ValidationResult {
+    var isValidPhone: Bool {
         if !isValid || count < 3 {
-            return .invalid()
+            return false
         } else if !Self.numberKit.isValidPhoneNumber(self) {
-            return .invalid("Invalid phone number")
+            return false
         } else {
-            return .valid
+            return true
         }
     }
     
