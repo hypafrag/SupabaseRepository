@@ -11,8 +11,9 @@ import CoreData
 import UIKit
 @_exported import Loader
 @_exported import CommonUtils
+import Combine
 
-public protocol UserRepository: AnyObject {
+public protocol UserRepository: Sendable {
     associatedtype User: NSManagedObject & Uploadable where User.Source == [String:Any], User.Id == UUID?
     
     var database: Database { get }
@@ -21,40 +22,40 @@ public protocol UserRepository: AnyObject {
     var user: Loadable<User> { get }
     
     @MainActor func user(id: UUID) -> User?
-    @MainActor func loadUser(id: UUID) async throws -> User?
+    func loadUser(id: UUID) async throws -> User?
     @MainActor func createUser(fill: @escaping (User)->()) async throws -> User
     @MainActor func editCurrentUser(_ update: @escaping (User)->()) async throws
     @MainActor func deleteAccount() async throws
+    
+    @discardableResult
     func updateCurrentUser() async throws -> User?
 }
 
 public extension UserRepository {
     
-    func setupUserRepository() {
-        sessionManager.sinkOnMain(retained: self) { [weak self] in
-            guard let wSelf = self else { return }
-            
-            if wSelf.sessionManager.session == nil {
-                wSelf.user.cancelLoading()
-                wSelf.user.value = nil
-            } else {
-                Task { try await wSelf.updateCurrentUser() }
-            }
+    @MainActor
+    func setupUserRepositoryObserver() -> AnyCancellable {
+        if let userId = sessionManager.session()?.userId {
+            user.value = user(id: userId)
         }
         
-        if let userId = sessionManager.session?.userId {
-            Task { @MainActor in
-                user.value = self.user(id: userId)
-                _ = try await self.updateCurrentUser()
+        let observer = sessionManager.session.value.sinkMain {
+            if $0 == nil {
+                user.cancelLoading()
+                user.value = nil
+            } else {
+                Task { try await updateCurrentUser() }
             }
         }
+        return observer
     }
     
-    @MainActor func user(id: UUID) -> User? {
+    @MainActor
+    func user(id: UUID) -> User? {
         User.findFirst(NSPredicate(format: "uid == %@", id.uuidString), ctx: database.viewContext)
     }
     
-    @MainActor func loadUser(id: UUID) async throws -> User? {
+    func loadUser(id: UUID) async throws -> User? {
         if let data = try await userAPI.user(id: id) {
             return await database.edit {
                 User.findAndUpdate(data, ctx: $0)?.getObjectId
@@ -106,9 +107,8 @@ public extension UserRepository {
     }
     
     func updateCurrentUser() async throws -> User? {
-        try await user.load { [weak self] in
-            guard let wSelf = self else { throw CancellationError() }
-            return try await wSelf.loadUser(id: wSelf.sessionManager.activeSession().userId)
+        try await user.load {
+            try await loadUser(id: sessionManager.activeSession().userId)
         }
     }
 }
@@ -120,13 +120,13 @@ public protocol WithProfilePhoto: AnyObject {
 
 public protocol UserRepositoryWithPhoto: UserRepository where User: WithProfilePhoto {
     
-    @MainActor func createUser(fill: @escaping (User)->(), profileImage: UIImage?) async throws -> User
-    @MainActor func editCurrentUser(newProfileImage: UIImage?, update: @escaping (User)->()) async throws
+    func createUser(fill: @escaping (User)->(), profileImage: UIImage?) async throws -> User
+    func editCurrentUser(newProfileImage: UIImage?, update: @Sendable @escaping (User)->()) async throws
 }
 
 public extension UserRepositoryWithPhoto {
     
-    @MainActor func createUser(fill: @escaping (User)->(), profileImage: UIImage?) async throws -> User {
+    func createUser(fill: @escaping (User)->(), profileImage: UIImage?) async throws -> User {
         let userId = try sessionManager.activeSession().userId
         
         var photoKey: String?
@@ -141,14 +141,17 @@ public extension UserRepositoryWithPhoto {
         }
     }
     
-    @MainActor func editCurrentUser(newProfileImage: UIImage?, update: @escaping (User)->()) async throws {
-        guard let user = user.value else { throw SessionError.notAuthorized }
-        
-        var photoKey = user.profilePhoto
-        if let image = newProfileImage {
-            await userAPI.deleteProfileImage(userId: user.uid!)
-            photoKey = try await userAPI.uploadProfile(image: image, userId: user.uid!).key
-        }
+    func editCurrentUser(newProfileImage: UIImage?, update: @Sendable @escaping (User)->()) async throws {
+        let photoKey = try await Task { @MainActor () -> String? in
+            guard let user = user.value else { throw SessionError.notAuthorized }
+            
+            if let image = newProfileImage {
+                await userAPI.deleteProfileImage(userId: user.uid!)
+                return try await userAPI.uploadProfile(image: image, userId: user.uid!).key
+            } else {
+                return user.profilePhoto
+            }
+        }.value
         
         try await editCurrentUser {
             update($0)

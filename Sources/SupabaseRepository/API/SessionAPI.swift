@@ -8,10 +8,8 @@
 import Foundation
 @_exported import CommonUtils
 
-public protocol SessionAPIProtocol {
-    
-    var repository: SupabaseRepositoryProtocol { get }
-    
+public protocol SessionAPIProtocol: Sendable {
+    var repository: any SupabaseRepositoryProtocol { get }
     var didLogout: VoidPublisher { get }
     
     func verificationId(phoneNumber: String) async throws -> String

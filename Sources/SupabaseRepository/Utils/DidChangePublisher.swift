@@ -46,7 +46,7 @@ public struct DidChangePublisher: Publisher {
         
         let client: SupabaseClient
         let channel: RealtimeChannelV2
-        @RWAtomic var tokens: [RealtimeChannelV2.Subscription] = []
+        @RWAtomic var tokens: [RealtimeSubscription] = []
         
         init(subscriber: S, client: SupabaseClient, table: SupabaseId, filter: String?, changes: Changes) {
             self.client = client

@@ -14,9 +14,9 @@ public extension SupabaseId {
     static let avatarsBucket = SupabaseId(rawValue: "avatars")
 }
 
-public protocol UserAPIProtocol {
-    var repository: SupabaseRepositoryProtocol { get }
+public protocol UserAPIProtocol: Sendable {
     
+    var repository: any SupabaseRepositoryProtocol { get }
     var userScope: String { get }
     
     func user(id: UUID) async throws -> [String:Any]?

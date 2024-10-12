@@ -6,13 +6,13 @@ import Foundation
 @_exported import Kingfisher
 import UIKit
 
-public protocol ImageProviderProtocol: ImageDataProvider {
+public protocol ImageProviderProtocol: ImageDataProvider, Sendable {
     
     var supabaseRepository: any SupabaseRepositoryProtocol { get }
     var path: ImageProviderPath { get }
 }
 
-public enum ImageProviderPath {
+public enum ImageProviderPath: Sendable {
     case bucket(BucketFilePath)
     case url( URL)
     

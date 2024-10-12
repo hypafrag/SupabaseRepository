@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Combine
+import CommonUtils
 
 public enum SessionError: LocalizedError {
     case notAuthorized
@@ -19,7 +21,7 @@ public enum SessionError: LocalizedError {
     }
 }
 
-public struct Session: Codable {
+public struct Session: Codable, Sendable {
     public let userId: UUID
     public let login: String
     
@@ -29,7 +31,7 @@ public struct Session: Codable {
     }
 }
 
-public struct Verification: Hashable {
+public struct Verification: Hashable, Sendable {
     let id: String
     public let login: String
     
@@ -39,10 +41,11 @@ public struct Verification: Hashable {
     }
 }
 
-public protocol SessionManagerProtocol: ObservableObject {
+public protocol SessionManagerProtocol: Sendable {
+    associatedtype SessionAPI: SessionAPIProtocol
     
-    var session: Session? { get set }
-    var sessionAPI: any SessionAPIProtocol { get }
+    var session: ObservableValue<Session?> { get }
+    var sessionAPI: SessionAPI { get }
     
     func verify(_ verification: Verification, code: String) async throws
     func activeSession() throws -> Session
@@ -52,10 +55,10 @@ public protocol SessionManagerProtocol: ObservableObject {
 
 public extension SessionManagerProtocol {
     
-    func setupSession() {
-        sessionAPI.didLogout.sinkMain(retained: self) { [weak self] in
-            if let wSelf = self, wSelf.session != nil {
-                wSelf.session = nil
+    func setupSessionObserver() -> AnyCancellable {
+        sessionAPI.didLogout.sinkMain {
+            if session() != nil {
+                session.update(nil)
             }
         }
     }
@@ -63,7 +66,7 @@ public extension SessionManagerProtocol {
     func verify(_ verification: Verification, code: String) async throws {
         do {
             let id = try await sessionAPI.signIn(verificationId: verification.id, code: code)
-            session = .init(userId: id, login: verification.login)
+            await session.update(.init(userId: id, login: verification.login))
         } catch {
             /*if (error as NSError).code == 17044 { // check invalid code
                 throw Error.invalidCode
@@ -73,12 +76,12 @@ public extension SessionManagerProtocol {
     }
     
     func activeSession() throws -> Session {
-        if let session {
+        if let session = session() {
             return session
         } else { throw SessionError.notAuthorized }
     }
     
-    var isLoggedIn: Bool { session != nil }
+    var isLoggedIn: Bool { session() != nil }
     
     func signIn(phone: String) async throws -> Verification {
         Verification(id: try await sessionAPI.verificationId(phoneNumber: phone), login: phone)

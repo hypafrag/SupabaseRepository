@@ -11,7 +11,7 @@ import Supabase
 import UIKit
 @_exported import Kingfisher
 
-public struct SupabaseId: RawRepresentable, Codable, Hashable {
+public struct SupabaseId: RawRepresentable, Codable, Hashable, Sendable {
     public var rawValue: String
     
     public init(rawValue: String) {
@@ -24,7 +24,7 @@ public enum ImageExtension: String {
     case png
 }
 
-public enum RemoteFile: Codable, Hashable {
+public enum RemoteFile: Codable, Hashable, Sendable {
     case url(URL)
     case storage(BucketFilePath)
     
@@ -36,7 +36,7 @@ public enum RemoteFile: Codable, Hashable {
     }
 }
 
-public struct BucketFilePath: Codable, Hashable {
+public struct BucketFilePath: Codable, Hashable, Sendable {
     public let bucket: SupabaseId
     public let fileName: String
     
@@ -59,11 +59,12 @@ public struct BucketFilePath: Codable, Hashable {
     }
 }
 
-public protocol SupabaseRepositoryProtocol {
+public protocol SupabaseRepositoryProtocol: Sendable {
     
     var client: SupabaseClient { get }
     
     func imageProvider(path: ImageProviderPath) -> any ImageProviderProtocol
+    
     func signedUrl(path: BucketFilePath) async throws -> URL
     func object(id: UUID, table: SupabaseId, select: String) async throws -> [String:Any]?
     func updateObject(id: UUID, table: SupabaseId, data: [String:Any]) async throws -> [String:Any]
@@ -158,7 +159,7 @@ public extension SupabaseRepositoryProtocol {
         let name = messageId.uuidString + suffix + ".\(file.pathExtension)"
         
         _ = try await client.storage.from(bucket.rawValue)
-            .upload(path: name, file: data, options: .init(contentType: contentType, upsert: true))
+            .upload(name, data: data, options: .init(contentType: contentType, upsert: true))
         
         return .init(bucket: bucket, fileName: name)
     }
@@ -183,7 +184,7 @@ public extension SupabaseRepositoryProtocol {
         guard let data else { throw RunError.custom("Cannot upload image") }
         
         _ = try await client.storage.from(path.bucket.rawValue)
-            .upload(path: path.fileName, file: data, options: .init(contentType: "image/\(imageExtension.rawValue)", upsert: true))
+            .upload(path.fileName, data: data, options: .init(contentType: "image/\(imageExtension.rawValue)", upsert: true))
         
         ImageCache.default.store(image, forKey: path.key)
         return path
