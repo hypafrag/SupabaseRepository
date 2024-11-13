@@ -63,7 +63,7 @@ public protocol SupabaseRepositoryProtocol: Sendable {
     
     var client: SupabaseClient { get }
     
-    func imageProvider(path: ImageProviderPath) -> any ImageProviderProtocol
+    func imageProvider(path: FileProviderPath) -> any ImageProviderProtocol
     
     func signedUrl(path: BucketFilePath) async throws -> URL
     func object(id: UUID, table: SupabaseId, select: String) async throws -> [String:Any]?

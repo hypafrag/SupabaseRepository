@@ -9,10 +9,10 @@ import UIKit
 public protocol ImageProviderProtocol: ImageDataProvider, Sendable {
     
     var supabaseRepository: any SupabaseRepositoryProtocol { get }
-    var path: ImageProviderPath { get }
+    var path: FileProviderPath { get }
 }
 
-public enum ImageProviderPath: Sendable {
+public enum FileProviderPath: Sendable {
     case bucket(BucketFilePath)
     case url( URL)
     
@@ -23,7 +23,7 @@ public enum ImageProviderPath: Sendable {
         }
     }
     
-    func url(repository: any SupabaseRepositoryProtocol) async throws -> URL {
+    public func url(repository: any SupabaseRepositoryProtocol) async throws -> URL {
         switch self {
         case .bucket(let path): try await repository.signedUrl(path: path)
         case .url(let url): url
@@ -37,6 +37,15 @@ public enum ImageProviderPath: Sendable {
             self = .bucket(path)
         } else {
             return nil
+        }
+    }
+    
+    public init(_ remoteFile: RemoteFile) {
+        switch remoteFile {
+        case .url(let url):
+            self = .url(url)
+        case .storage(let path):
+            self = .bucket(path)
         }
     }
 }

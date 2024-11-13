@@ -39,7 +39,7 @@ public extension UserRepository {
             user.value = user(id: userId)
         }
         
-        let observer = sessionManager.session.value.sinkMain {
+        let observer = sessionManager.session.publisher.sink {
             if $0 == nil {
                 user.cancelLoading()
                 user.value = nil

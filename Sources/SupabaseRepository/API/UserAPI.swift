@@ -39,7 +39,9 @@ public extension UserAPIProtocol {
     func users(ids: [UUID]) async throws -> [[String:Any]] {
         if ids.isEmpty { return [] }
         
-        let result: [AnyJSON] = try await repository.client.from(SupabaseId.usersTable.rawValue).select(userScope).in("id", values: ids).execute().value
+        let result: [AnyJSON] = try await repository.client.from(SupabaseId.usersTable.rawValue)
+            .select("*,latestStory:stories!latest_story_id(*)")
+            .in("id", values: ids).execute().value
         return result.anyArrayOfDict
     }
     

@@ -44,7 +44,7 @@ public struct Verification: Hashable, Sendable {
 public protocol SessionManagerProtocol: Sendable {
     associatedtype SessionAPI: SessionAPIProtocol
     
-    var session: ObservableValue<Session?> { get }
+    var session: ObservedValue<Session?> { get }
     var sessionAPI: SessionAPI { get }
     
     func verify(_ verification: Verification, code: String) async throws
@@ -56,9 +56,9 @@ public protocol SessionManagerProtocol: Sendable {
 public extension SessionManagerProtocol {
     
     func setupSessionObserver() -> AnyCancellable {
-        sessionAPI.didLogout.sinkMain {
+        sessionAPI.didLogout.sink {
             if session() != nil {
-                session.update(nil)
+                session.wrappedValue = nil
             }
         }
     }
@@ -66,7 +66,7 @@ public extension SessionManagerProtocol {
     func verify(_ verification: Verification, code: String) async throws {
         do {
             let id = try await sessionAPI.signIn(verificationId: verification.id, code: code)
-            await session.update(.init(userId: id, login: verification.login))
+            session.wrappedValue = Session(userId: id, login: verification.login)
         } catch {
             /*if (error as NSError).code == 17044 { // check invalid code
                 throw Error.invalidCode
