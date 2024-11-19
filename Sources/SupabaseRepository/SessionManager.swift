@@ -88,13 +88,13 @@ public extension SessionManagerProtocol {
         Verification(id: try await sessionAPI.verificationId(phoneNumber: phone), login: phone)
     }
     
-    func signInWIthoutVerification(phone: String) async throws {
+    func signInWIthoutVerification(phone: String, password: String = "123456") async throws {
         do {
-            let id = try await sessionAPI.signIn(phone: phone, password: "123456")
+            let id = try await sessionAPI.signIn(phone: phone, password: password)
             session.wrappedValue = Session(userId: id, login: phone)
         } catch {
             if let error = error as? AuthError, error.errorCode == .invalidCredentials {
-                let id = try await sessionAPI.signUp(phone: phone, password: "123456")
+                let id = try await sessionAPI.signUp(phone: phone, password: password)
                 session.wrappedValue = Session(userId: id, login: phone)
                 return
             }
