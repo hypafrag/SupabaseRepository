@@ -49,7 +49,15 @@ public extension SessionAPIProtocol {
     func signIn(verificationId: String, code: String) async throws -> UUID {
         try await repository.client.auth.verifyOTP(phone: verificationId, token: code, type: .sms).user.id
     }
-    
+
+    func signIn(phone: String, password: String) async throws -> UUID {
+        try await repository.client.auth.signIn(phone: phone, password: password).user.id
+    }
+
+    func signUp(phone: String, password: String) async throws -> UUID {
+        try await repository.client.auth.signUp(phone: phone, password: password).user.id
+    }
+
     func logout() async throws {
         try await repository.client.auth.signOut()
     }

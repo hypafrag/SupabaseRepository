@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import CommonUtils
+import Supabase
 
 public enum SessionError: LocalizedError {
     case notAuthorized
@@ -85,6 +86,20 @@ public extension SessionManagerProtocol {
     
     func signIn(phone: String) async throws -> Verification {
         Verification(id: try await sessionAPI.verificationId(phoneNumber: phone), login: phone)
+    }
+    
+    func signInWIthoutVerification(phone: String) async throws {
+        do {
+            let id = try await sessionAPI.signIn(phone: phone, password: "123456")
+            session.wrappedValue = Session(userId: id, login: phone)
+        } catch {
+            if let error = error as? AuthError, error.errorCode == .invalidCredentials {
+                let id = try await sessionAPI.signUp(phone: phone, password: "123456")
+                session.wrappedValue = Session(userId: id, login: phone)
+                return
+            }
+            throw error
+        }
     }
     
     func logout() async throws {
