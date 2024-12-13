@@ -24,8 +24,12 @@ public protocol UserAPIProtocol: Sendable {
     func createUser(data: [String:Any]) async throws -> [String:Any]
     func updateUser(id: UUID, data: [String:Any]) async throws -> [String:Any]
     func deleteUser(userId: UUID) async throws
+    @available (*, deprecated, message: "Use `uploadProfile(image:, imageExtension:)` instead")
     func uploadProfile(image: UIImage, userId: UUID, imageExtension: ImageExtension) async throws -> BucketFilePath
+    func uploadProfile(image: UIImage, imageExtension: ImageExtension) async throws -> BucketFilePath
+    @available (*, deprecated, message: "Use `deleteProfileImage(key:)` instead")
     func deleteProfileImage(userId: UUID, imageExtension: ImageExtension) async
+    func deleteProfileImage(key: String) async
 }
 
 public extension UserAPIProtocol {
@@ -58,11 +62,22 @@ public extension UserAPIProtocol {
         try await repository.deleteObject(id: userId, table: .usersTable)
     }
     
+    @available (*, deprecated, message: "Use `uploadProfile(image:, imageExtension:)` instead")
     func uploadProfile(image: UIImage, userId: UUID, imageExtension: ImageExtension = .jpg) async throws -> BucketFilePath {
         try await repository.upload(image: image.reduced(1024), path: BucketFilePath(bucket: .avatarsBucket, fileName: userId.uuidString + ".\(imageExtension.rawValue)"), imageExtension: imageExtension)
     }
     
+    func uploadProfile(image: UIImage, imageExtension: ImageExtension = .jpg) async throws -> BucketFilePath {
+        try await repository.upload(image: image.reduced(1024), path: BucketFilePath(bucket: .avatarsBucket, fileName: UUID().uuidString + ".\(imageExtension.rawValue)"), imageExtension: imageExtension)
+    }
+    
+    @available (*, deprecated, message: "Use `deleteProfileImage(key:)` instead")
     func deleteProfileImage(userId: UUID, imageExtension: ImageExtension = .jpg) async {
         await repository.deleteImage(BucketFilePath(bucket: .avatarsBucket, fileName: userId.uuidString + ".\(imageExtension.rawValue)"))
+    }
+    
+    func deleteProfileImage(key: String) async {
+        guard let path = BucketFilePath(key: key) else { return }
+        await repository.deleteImage(path)
     }
 }

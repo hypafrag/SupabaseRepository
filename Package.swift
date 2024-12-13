@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/ivkuznetsov/Database.git", from: .init(1, 3, 6)),
         .package(url: "https://github.com/supabase-community/supabase-swift.git", from: .init(2, 23, 0)),
         .package(url: "https://github.com/ivkuznetsov/CommonUtils.git", from: .init(1, 2, 9)),
-        .package(url: "https://github.com/onevcat/Kingfisher.git", from: .init(7, 11, 0)),
+        .package(url: "https://github.com/onevcat/Kingfisher.git", from: .init(8, 1, 2)),
         .package(url: "https://github.com/ivkuznetsov/Loader.git", from: .init(1, 1, 0)),
         .package(url: "https://github.com/marmelroy/PhoneNumberKit.git", from: .init(3, 7, 10))
     ],

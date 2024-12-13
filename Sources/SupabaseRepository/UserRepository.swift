@@ -131,8 +131,7 @@ public extension UserRepositoryWithPhoto {
         
         var photoKey: String?
         if let image = profileImage {
-            await userAPI.deleteProfileImage(userId: userId)
-            photoKey = try await userAPI.uploadProfile(image: image, userId: userId).key
+            photoKey = try await userAPI.uploadProfile(image: image).key
         }
         
         return try await createUser {
@@ -146,8 +145,10 @@ public extension UserRepositoryWithPhoto {
             guard let user = user.value else { throw SessionError.notAuthorized }
             
             if let image = newProfileImage {
-                await userAPI.deleteProfileImage(userId: user.uid!)
-                return try await userAPI.uploadProfile(image: image, userId: user.uid!).key
+                if let profilePhoto = user.profilePhoto {
+                    await userAPI.deleteProfileImage(key: profilePhoto)
+                }
+                return try await userAPI.uploadProfile(image: image).key
             } else {
                 return user.profilePhoto
             }

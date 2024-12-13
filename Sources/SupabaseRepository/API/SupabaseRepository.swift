@@ -168,7 +168,7 @@ public extension SupabaseRepositoryProtocol {
         let result = try await upload(file: image, messageId: messageId, bucket: bucket, suffix: suffix, contentType: "image/\(image.pathExtension.lowercased())")
         
         if let data = try? Data(contentsOf: image), let resultImage = UIImage(data: data) {
-            ImageCache.default.store(resultImage, forKey: result.key)
+            try? await ImageCache.default.store(resultImage, forKey: result.key)
         }
         return result
     }
@@ -186,12 +186,12 @@ public extension SupabaseRepositoryProtocol {
         _ = try await client.storage.from(path.bucket.rawValue)
             .upload(path.fileName, data: data, options: .init(contentType: "image/\(imageExtension.rawValue)", upsert: true))
         
-        ImageCache.default.store(image, forKey: path.key)
+        try? await ImageCache.default.store(image, forKey: path.key)
         return path
     }
     
     func deleteImage(_ path: BucketFilePath) async {
         _ = try? await client.storage.from(path.bucket.rawValue).remove(paths: [path.fileName])
-        ImageCache.default.removeImage(forKey: path.key)
+        try? await ImageCache.default.removeImage(forKey: path.key)
     }
 }
